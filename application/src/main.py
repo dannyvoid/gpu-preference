@@ -42,6 +42,8 @@ from PySide6.QtWidgets import (
     QToolButton,
     QVBoxLayout,
     QWidget,
+    QHBoxLayout,
+    QSizePolicy,
 )
 
 REG_PATH = r"Software\Microsoft\DirectX\UserGpuPreferences"
@@ -159,6 +161,8 @@ class PathDelegate(QStyledItemDelegate):
 class PrefDelegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):
         cb = QComboBox(parent)
+        cb.setEditable(False)
+        cb.setInsertPolicy(QComboBox.NoInsert)
         mw: MainWindow = index.model().parent()
         cb.addItems([mw.label_power, mw.label_perf])
         return cb
@@ -178,6 +182,62 @@ class PrefDelegate(QStyledItemDelegate):
         )
         model.setData(index, text, Qt.EditRole)
         mw.statusBar().showMessage(f"Updated GPU preference for {Path(exe).name}", 2000)
+
+
+def set_role(btn: QToolButton, role: str):
+    """Set a style role property that QSS can target, e.g., [role="primary"]"""
+    btn.setProperty("role", role)
+    btn.style().unpolish(btn)
+    btn.style().polish(btn)
+    btn.update()
+
+
+def mark_checked(btn: QToolButton, checked: bool):
+    """Mark button as checked for QSS selector [checked="true"]"""
+    btn.setProperty("checked", "true" if checked else "false")
+    btn.style().unpolish(btn)
+    btn.style().polish(btn)
+    btn.update()
+
+
+class SegmentedControl(QWidget):
+    def __init__(self, labels: List[str], parent=None):
+        super().__init__(parent)
+        self.setProperty("segmented", "true")
+        outer = QHBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+
+        self.buttons: List[QToolButton] = []
+        for txt in labels:
+            b = QToolButton(self)
+            b.setText(txt)
+            b.setCheckable(True)
+            b.setAutoExclusive(True)
+            outer.addWidget(b)
+            self.buttons.append(b)
+
+    def on_change(self, idx: int, func):
+        if 0 <= idx < len(self.buttons):
+            self.buttons[idx].clicked.connect(func)
+
+    def set_checked(self, idx: Optional[int]):
+        """If idx is None, clear all; else check idx."""
+        if idx is None:
+            for b in self.buttons:
+                b.setAutoExclusive(False)
+                b.setChecked(False)
+                mark_checked(b, False)
+            for b in self.buttons:
+                b.setAutoExclusive(True)
+            return
+        for i, b in enumerate(self.buttons):
+            b.setChecked(i == idx)
+            mark_checked(b, i == idx)
+
+    def set_texts(self, labels: List[str]):
+        for i, (b, t) in enumerate(zip(self.buttons, labels)):
+            b.setText(t)
 
 
 class RunningProcessDialog(QDialog):
@@ -273,28 +333,34 @@ class MainWindow(QMainWindow):
             "default_gpu_high_perf", True, type=bool
         )
 
-        self._init_app_palette()
+        self._apply_modern_style()
         self._init_window_size()
         self._build_ui()
         self._post_build()
         self._load_entries()
 
-    def _init_app_palette(self):
-        QApplication.setStyle("Fusion")
-        p = QPalette()
-        p.setColor(QPalette.Window, QColor(53, 53, 53))
-        p.setColor(QPalette.WindowText, Qt.white)
-        p.setColor(QPalette.Base, QColor(35, 35, 35))
-        p.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
-        p.setColor(QPalette.ToolTipBase, Qt.white)
-        p.setColor(QPalette.ToolTipText, Qt.white)
-        p.setColor(QPalette.Text, Qt.white)
-        p.setColor(QPalette.Button, QColor(53, 53, 53))
-        p.setColor(QPalette.ButtonText, Qt.white)
-        p.setColor(QPalette.BrightText, Qt.red)
-        p.setColor(QPalette.Highlight, QColor(0, 120, 215))
-        p.setColor(QPalette.HighlightedText, Qt.white)
-        QApplication.setPalette(p)
+    def _apply_modern_style(self):
+        app = QApplication.instance()
+        if not app:
+            return
+        qss_path = Path(__file__).resolve().parent / "assets" / "theme.qss"
+        try:
+            with open(qss_path, "r", encoding="utf-8") as f:
+                app.setStyleSheet(f.read())
+        except Exception:
+            p = QPalette()
+            p.setColor(QPalette.Window, QColor(17, 19, 21))
+            p.setColor(QPalette.WindowText, Qt.white)
+            p.setColor(QPalette.Base, QColor(12, 14, 16))
+            p.setColor(QPalette.AlternateBase, QColor(17, 19, 21))
+            p.setColor(QPalette.ToolTipBase, Qt.white)
+            p.setColor(QPalette.ToolTipText, Qt.white)
+            p.setColor(QPalette.Text, Qt.white)
+            p.setColor(QPalette.Button, QColor(17, 19, 21))
+            p.setColor(QPalette.ButtonText, Qt.white)
+            p.setColor(QPalette.Highlight, QColor(37, 99, 235))
+            p.setColor(QPalette.HighlightedText, Qt.white)
+            app.setPalette(p)
 
     def _init_window_size(self):
         size = self.settings.value("window_size")
@@ -306,9 +372,9 @@ class MainWindow(QMainWindow):
                     w, h = map(int, size)
                     self.resize(QSize(w, h))
                 else:
-                    self.resize(980, 580)
+                    self.resize(980, 600)
             except Exception:
-                self.resize(980, 580)
+                self.resize(980, 600)
 
         screen = QGuiApplication.primaryScreen().availableGeometry()
         frame = self.frameGeometry()
@@ -318,7 +384,7 @@ class MainWindow(QMainWindow):
     def _build_ui(self):
         self.statusBar()
 
-        tb = self.addToolBar("Main")
+        tb = self.addToolBar("Actions")
         tb.setMovable(False)
 
         add_menu = QMenu("Add", self)
@@ -331,31 +397,34 @@ class MainWindow(QMainWindow):
         add_btn.setMenu(add_menu)
         add_btn.setPopupMode(QToolButton.MenuButtonPopup)
         add_btn.setIcon(QIcon.fromTheme("list-add"))
+        add_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        set_role(add_btn, "primary")
         tb.addWidget(add_btn)
-        tb.addSeparator()
 
         self.act_remove = QAction(
             QIcon.fromTheme("edit-delete"), "Remove Selected", self, enabled=False
         )
         self.act_remove.triggered.connect(self._on_remove_selected)
-        tb.addAction(self.act_remove)
 
-        pref_menu = QMenu("Set GPU Preference", self)
-        pref_menu.addAction(self.label_power, lambda: self._on_change_selected(False))
-        pref_menu.addAction(self.label_perf, lambda: self._on_change_selected(True))
+        remove_btn = QToolButton(self)
+        remove_btn.setDefaultAction(self.act_remove)
+        remove_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        set_role(remove_btn, "danger")
+        tb.addWidget(remove_btn)
 
-        self.pref_btn = QToolButton(self)
-        self.pref_btn.setText("GPU Pref")
-        self.pref_btn.setMenu(pref_menu)
-        self.pref_btn.setPopupMode(QToolButton.MenuButtonPopup)
-        self.pref_btn.setIcon(QIcon.fromTheme("preferences-system"))
-        self.pref_btn.setEnabled(False)
-        tb.addWidget(self.pref_btn)
+        tb.addSeparator()
+
+        self._seg = SegmentedControl([self.label_power, self.label_perf], self)
+        self._seg.set_checked(None)
+        self._seg.on_change(0, lambda: self._on_change_selected(False))
+        self._seg.on_change(1, lambda: self._on_change_selected(True))
+        tb.addWidget(self._seg)
+
         tb.addSeparator()
 
         self.check_btn = QToolButton(self)
         self.check_btn.setIcon(QIcon.fromTheme("system-search"))
-        self.check_btn.setToolTip("Check selected rows (or all if none selected)")
+        self.check_btn.setText("Check All")
         self.check_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.check_btn.clicked.connect(
             lambda: self._on_check_existence(selected_only=True)
@@ -365,12 +434,17 @@ class MainWindow(QMainWindow):
         check_menu.addAction("Check Selected", lambda: self._on_check_existence(True))
         check_menu.addAction("Check All", lambda: self._on_check_existence(False))
         self.check_btn.setMenu(check_menu)
+        self.check_btn.setPopupMode(QToolButton.MenuButtonPopup)
         tb.addWidget(self.check_btn)
-        tb.addSeparator()
 
         act_refresh = QAction(QIcon.fromTheme("view-refresh"), "Refresh", self)
         act_refresh.triggered.connect(self._load_entries)
-        tb.addAction(act_refresh)
+        refresh_btn = QToolButton(self)
+        refresh_btn.setDefaultAction(act_refresh)
+        refresh_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        set_role(refresh_btn, "ghost")
+        tb.addWidget(refresh_btn)
+
         tb.addSeparator()
 
         opt_menu = QMenu("Options", self)
@@ -403,10 +477,20 @@ class MainWindow(QMainWindow):
         opt_btn.setMenu(opt_menu)
         opt_btn.setPopupMode(QToolButton.InstantPopup)
         opt_btn.setIcon(QIcon.fromTheme("applications-system"))
+        set_role(opt_btn, "ghost")
         tb.addWidget(opt_btn)
 
+        spacer = QWidget(self)
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        tb.addWidget(spacer)
+
+        self.quick_filter = QLineEdit(self, placeholderText="Filter table…")
+        self.quick_filter.textChanged.connect(self._apply_quick_filter)
+        self.quick_filter.setMaximumWidth(280)
+        tb.addWidget(self.quick_filter)
+
         self.table = QTableView(self)
-        self.table.setAlternatingRowColors(True)
+        self.table.setAlternatingRowColors(False)
         self.table.setSortingEnabled(True)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
@@ -438,6 +522,7 @@ class MainWindow(QMainWindow):
 
         central = QWidget(self)
         lay = QVBoxLayout(central)
+        lay.setContentsMargins(12, 8, 12, 12)
         lay.addWidget(self.table)
         self.setCentralWidget(central)
 
@@ -470,13 +555,6 @@ class MainWindow(QMainWindow):
             hdr.resizeSection(i, w)
             self.settings.remove(f"column_width_{i}")
 
-    def _update_actions_state(self, *_):
-        has_sel = bool(self.table.selectionModel().selectedRows())
-        self.act_remove.setEnabled(has_sel)
-        self.pref_btn.setEnabled(has_sel)
-        sel_rows = len(self.table.selectionModel().selectedRows())
-        self.check_btn.setText(f"Check {sel_rows} Selected" if has_sel else "Check All")
-
     def _load_entries(self):
         self.model.removeRows(0, self.model.rowCount())
         entries = RegistryManager.read_all()
@@ -499,28 +577,38 @@ class MainWindow(QMainWindow):
 
         self.table.resizeColumnToContents(self.Columns.IDX)
 
+    def _apply_quick_filter(self, text: str):
+        text = text.strip().lower()
+        for r in range(self.model.rowCount()):
+            exec_txt = self.model.item(r, self.Columns.EXEC).text().lower()
+            pref_txt = self.model.item(r, self.Columns.PREF).text().lower()
+            match = (text in exec_txt) or (text in pref_txt)
+            self.table.setRowHidden(r, not match if text else False)
+
     def _update_row_existence(self, row: int) -> None:
         exe = self.model.item(row, self.Columns.EXEC).text()
         exists_text = ""
         exists_flag: Optional[bool] = None
         if is_exe(exe):
             exists_flag = Path(exe).exists()
-            exists_text = "Yes" if exists_flag else "No"
+            exists_text = "●  Yes" if exists_flag else "●  No"
 
-        self.model.item(row, self.Columns.EXISTS).setText(exists_text)
+        item = self.model.item(row, self.Columns.EXISTS)
+        item.setText(exists_text)
+
+        for c in range(self.model.columnCount()):
+            it = self.model.item(row, c)
+            it.setData(None, Qt.BackgroundRole)
+            it.setData(None, Qt.ForegroundRole)
+
         if exists_flag is False:
-            fg = contrasting_text_color(self.warning_bg)
-            for c in range(self.model.columnCount()):
-                it = self.model.item(row, c)
-                it.setBackground(self.warning_bg)
-                it.setForeground(fg)
-        else:
-            for c in range(self.model.columnCount()):
-                it = self.model.item(row, c)
-                bg = it.background()
-                if bg.style() != Qt.NoBrush and bg.color() == self.warning_bg:
-                    it.setData(None, Qt.BackgroundRole)
-                    it.setData(None, Qt.ForegroundRole)
+            warn_bg = QColor(44, 7, 7)
+            warn_fg = QColor(255, 153, 160)
+            self.model.item(row, self.Columns.EXEC).setBackground(warn_bg)
+            item.setForeground(warn_fg)
+        elif exists_flag is True:
+            ok_fg = QColor(120, 199, 143)
+            item.setForeground(ok_fg)
 
     def _existing_set(self) -> set[str]:
         return {e.exe for e in RegistryManager.read_all()}
@@ -580,10 +668,16 @@ class MainWindow(QMainWindow):
 
     def _on_change_selected(self, high_perf: bool):
         rows = [i.row() for i in self.table.selectionModel().selectedRows()]
+        if not rows:
+            return
         for r in rows:
             exe = self.model.item(r, self.Columns.EXEC).text()
             RegistryManager.set_pref(exe, Pref.PERF if high_perf else Pref.POWER)
+            self.model.item(r, self.Columns.PREF).setText(
+                self.label_perf if high_perf else self.label_power
+            )
         self._load_entries()
+        self._refresh_segmented_from_selection()
 
     def _on_check_existence(self, selected_only: bool):
         if selected_only:
@@ -615,12 +709,16 @@ class MainWindow(QMainWindow):
         RegistryManager.restore(path)
         self._load_entries()
         QMessageBox.information(self, "Restore", "Configuration restored.")
+        self._refresh_segmented_from_selection()
 
     def _set_default_gpu(self, high_performance: bool):
         self.default_gpu_high_perf = high_performance
         self.settings.setValue("default_gpu_high_perf", high_performance)
         self.act_default_perf.setChecked(high_performance)
-        self.act_default_power.setChecked(not high_performance)
+        self.act_default_power.setChecked(
+            high_performance if False else not high_performance
+        )
+        self._seg.set_checked(None)
         QMessageBox.information(
             self,
             "Default GPU Preference",
@@ -649,9 +747,37 @@ class MainWindow(QMainWindow):
             self.settings.setValue("label_perf", self.label_perf)
 
         self._load_entries()
+
         self.table.setItemDelegateForColumn(self.Columns.PREF, PrefDelegate(self.table))
         self.act_default_power.setText(self.label_power)
         self.act_default_perf.setText(self.label_perf)
+        self._seg.set_texts([self.label_power, self.label_perf])
+
+        self._refresh_segmented_from_selection()
+
+    def _refresh_segmented_from_selection(self):
+        """Reflect the selected row(s) preference in the segmented control;
+        if 0 rows or >1 rows are selected, clear both."""
+        idxs = self.table.selectionModel().selectedRows()
+        if len(idxs) != 1:
+            self._seg.set_checked(None)
+            return
+        row = idxs[0].row()
+        pref_text = self.model.item(row, self.Columns.PREF).text()
+        if pref_text == self.label_perf:
+            self._seg.set_checked(1)
+        else:
+            self._seg.set_checked(0)
+
+    def _update_actions_state(self, *_):
+        has_sel = bool(self.table.selectionModel().selectedRows())
+        self.act_remove.setEnabled(has_sel)
+        sel_rows = len(self.table.selectionModel().selectedRows())
+        self.check_btn.setText(f"Check {sel_rows} Selected" if has_sel else "Check All")
+        for b in self._seg.buttons:
+            b.setEnabled(has_sel)
+
+        self._refresh_segmented_from_selection()
 
     def closeEvent(self, event):
         self.settings.setValue("window_size", self.size())
@@ -677,15 +803,19 @@ def set_taskbar_icon(hwnd: int, icon_path: str):
 
 def main():
     current_dir = Path(__file__).resolve().parent
-    icon_path = str(current_dir / "assets" / "icon.ico")
+    assets_dir = current_dir / "assets"
+    assets_dir.mkdir(exist_ok=True)
+    icon_path = str(assets_dir / "icon.ico")
 
     app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon(icon_path))
+    if os.path.exists(icon_path):
+        app.setWindowIcon(QIcon(icon_path))
 
     win = MainWindow()
     win.show()
 
-    set_taskbar_icon(int(win.winId()), icon_path)
+    if os.path.exists(icon_path):
+        set_taskbar_icon(int(win.winId()), icon_path)
     sys.exit(app.exec())
 
 

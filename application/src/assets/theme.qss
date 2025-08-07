@@ -1,0 +1,204 @@
+/* ===== Root / Base ===== */
+QMainWindow {
+    background: #111315;
+}
+QWidget {
+    font-size: 13px;
+    color: #EAECEF;
+    background: #111315; /* ensure dialogs and editors inherit dark bg */
+}
+QDialog {
+    background: #111315;
+}
+
+/* Tooltips consistent */
+QToolTip {
+    background: #1a1d21;
+    color: #EAECEF;
+    border: 1px solid rgba(255,255,255,0.10);
+    padding: 6px 8px;
+    border-radius: 6px;
+}
+
+/* ===== Toolbar / Action Row ===== */
+QToolBar {
+    background: transparent;
+    spacing: 8px;
+    padding: 8px 10px;
+    border: none;
+}
+QToolBar QToolButton {
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.03);
+}
+QToolBar QToolButton:hover {
+    background: rgba(255,255,255,0.06);
+}
+QToolBar QToolButton:pressed {
+    background: rgba(255,255,255,0.10);
+}
+QToolBar QToolButton[role="primary"] {
+    background: #2563eb;
+    border: 1px solid #2563eb;
+    color: white;
+}
+QToolBar QToolButton[role="primary"]:hover {
+    background: #2b6ff4;
+}
+QToolBar QToolButton[role="ghost"] {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.14);
+}
+QToolBar QToolButton[role="danger"] {
+    background: rgba(244,63,94,0.12);
+    border: 1px solid rgba(244,63,94,0.35);
+    color: #ffb3c0;
+}
+QToolBar QToolButton[role="danger"]:hover {
+    background: rgba(244,63,94,0.20);
+}
+
+/* Split-button arrow looks cleaner */
+QToolButton::menu-indicator {
+    image: none;
+}
+/* Separate the menu-button affordance with a soft divider */
+QToolButton::menu-button {
+    padding: 0px 8px;
+    border-left: 1px solid rgba(255,255,255,0.14);
+    margin-left: 6px;
+}
+/* Avoid odd divider visuals while the menu is open */
+QToolButton::menu-button:open {
+    background: rgba(255,255,255,0.06);
+    border-left-color: rgba(255,255,255,0.08);
+}
+
+/* ===== Segmented Control ===== */
+QWidget[segmented="true"] QToolButton {
+    border-radius: 0px;
+    border-left: none;
+    min-width: 90px;
+}
+QWidget[segmented="true"] QToolButton:first-child {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    border-left: 1px solid rgba(255,255,255,0.14);
+}
+QWidget[segmented="true"] QToolButton:last-child {
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+QWidget[segmented="true"] QToolButton[checked="true"] {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: white;
+}
+
+/* ===== Table ===== */
+QTableView {
+    background: #0c0e10;
+    gridline-color: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    outline: none;
+}
+QTableView::item {
+    padding: 8px;
+}
+QTableView::item:selected {
+    background: rgba(37, 99, 235, 0.25);
+}
+QTableView::item:hover {
+    background: rgba(255,255,255,0.04);
+}
+QHeaderView::section {
+    background: #0f1215;
+    color: #96a0a9;
+    padding: 8px;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+QHeaderView::section:horizontal {
+    border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+/* ===== Inputs ===== */
+QLineEdit {
+    background: #0f1215;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: #EAECEF;
+}
+QLineEdit:focus {
+    border-color: #2563eb;
+}
+
+/* ComboBox editor in-table and standalone */
+QComboBox {
+    background: #1a1d21;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: #EAECEF;
+}
+QComboBox:hover {
+    background: #22262b;
+}
+QComboBox::drop-down {
+    border-left: 1px solid rgba(255,255,255,0.12);
+    width: 22px;
+}
+QComboBox QAbstractItemView {
+    background: #0f1215;          /* popup list bg */
+    color: #EAECEF;                /* popup list text */
+    border: 1px solid rgba(255,255,255,0.12);
+    selection-background-color: rgba(37,99,235,0.35);
+    selection-color: #ffffff;
+    outline: none;
+}
+
+/* Dialog buttons */
+QDialogButtonBox QPushButton {
+    background: #1a1d21;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: #EAECEF;
+}
+QDialogButtonBox QPushButton:hover {
+    background: #22262b;
+}
+
+/* Checkboxes in dialogs (Running processes) */
+QCheckBox {
+    spacing: 6px;
+    color: #EAECEF;
+}
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+/* ===== Menus ===== */
+QMenu {
+    background: #121417;
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 8px;
+}
+QMenu::item {
+    padding: 6px 12px;
+    color: #EAECEF;
+    background: transparent;
+}
+QMenu::item:selected {
+    background: rgba(255,255,255,0.06);
+}
+QMenu::separator {
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin: 6px 8px;
+}
