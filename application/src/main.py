@@ -322,12 +322,9 @@ class ExistsDelegate(QStyledItemDelegate):
         self.initStyleOption(opt, index)
 
         text = opt.text
-        opt.text = ""  # stop the default text paint (which uses QSS color)
-
-        # Draw the normal cell (background, focus, selection, etc.)
+        opt.text = ""
         opt.widget.style().drawControl(QStyle.CE_ItemViewItem, opt, painter, opt.widget)
 
-        # Now draw our text with our own pen color
         painter.save()
         if not (opt.state & QStyle.State_Selected):
             flag = index.data(Qt.UserRole)
@@ -335,8 +332,9 @@ class ExistsDelegate(QStyledItemDelegate):
                 painter.setPen(QColor(120, 199, 143))
             elif flag is False:
                 painter.setPen(QColor(255, 153, 160))
-        painter.drawText(opt.rect.adjusted(6, 0, -6, 0),
-                         Qt.AlignVCenter | Qt.AlignLeft, text)
+        painter.drawText(
+            opt.rect.adjusted(6, 0, -6, 0), Qt.AlignVCenter | Qt.AlignLeft, text
+        )
         painter.restore()
 
 
@@ -426,9 +424,7 @@ class MainWindow(QMainWindow):
         set_role(add_btn, "primary")
         tb.addWidget(add_btn)
 
-        self.act_remove = QAction(
-            "Remove Selected", self, enabled=False
-        )
+        self.act_remove = QAction("Remove Selected", self, enabled=False)
         self.act_remove.triggered.connect(self._on_remove_selected)
 
         remove_btn = QToolButton(self)
@@ -447,7 +443,6 @@ class MainWindow(QMainWindow):
 
         tb.addSeparator()
 
-        # --- Check button: full-button menu, static label + dynamic menu ---
         self.act_check_selected = QAction("Check Selected", self)
         self.act_check_selected.triggered.connect(
             lambda: self._on_check_existence(True)
@@ -459,10 +454,10 @@ class MainWindow(QMainWindow):
         self.check_menu = QMenu(self)
 
         self.check_btn = QToolButton(self)
-        self.check_btn.setText("Check Path")  # static label
+        self.check_btn.setText("Check Path")
         self.check_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.check_btn.setMenu(self.check_menu)
-        self.check_btn.setPopupMode(QToolButton.InstantPopup)  # no split
+        self.check_btn.setPopupMode(QToolButton.InstantPopup)
         tb.addWidget(self.check_btn)
 
         act_refresh = QAction("Refresh", self)
@@ -623,16 +618,13 @@ class MainWindow(QMainWindow):
 
         item = self.model.item(row, self.Columns.EXISTS)
         item.setText(exists_text)
-        # Store boolean for the delegate; None means "unknown/blank"
         item.setData(exists_flag, Qt.UserRole)
 
-        # Clear previous manual roles for the whole row
         for c in range(self.model.columnCount()):
             it = self.model.item(row, c)
             it.setData(None, Qt.BackgroundRole)
             it.setData(None, Qt.ForegroundRole)
 
-        # Keep the missing-path background highlight on the EXEC cell
         if exists_flag is False:
             warn_bg = QColor(44, 7, 7)
             self.model.item(row, self.Columns.EXEC).setBackground(warn_bg)
@@ -798,14 +790,10 @@ class MainWindow(QMainWindow):
 
     def _update_actions_state(self, *_):
         has_sel = bool(self.table.selectionModel().selectedRows())
-        sel_rows = len(self.table.selectionModel().selectedRows())  # noqa F841
         self.act_remove.setEnabled(has_sel)
         for b in self._seg.buttons:
             b.setEnabled(has_sel)
 
-        # Static check button label; no dynamic text.
-
-        # Dynamic menu ordering + default
         self.check_menu.clear()
         if has_sel:
             self.check_menu.addAction(self.act_check_selected)
