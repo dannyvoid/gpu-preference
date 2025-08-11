@@ -49,18 +49,11 @@ QPushButton:disabled, QToolButton:disabled {
     border-color: rgba(255,255,255,0.05);
 }
 
-QPushButton[role="primary"], QToolButton[role="primary"] {
-    background: #2563eb;
-    border: 1px solid #2563eb;
-    color: white;
-}
 QPushButton[role="primary"]:hover, QToolButton[role="primary"]:hover {
     filter: brightness(1.05);
 }
-QPushButton[role="danger"], QToolButton[role="danger"] {
-    background: #7f1d1d;
-    border: 1px solid #7f1d1d;
-    color: #fff;
+QPushButton[role="danger"]:hover, QToolButton[role="danger"]:hover {
+    filter: brightness(1.05);
 }
 
 QToolBar {
