@@ -1,5 +1,3 @@
-
-/* ===== Root / Base ===== */
 QMainWindow {
     background: #111315;
 }
@@ -12,7 +10,6 @@ QDialog {
     background: #111315;
 }
 
-/* Tooltips */
 QToolTip {
     background: #1a1d21;
     color: #EAECEF;
@@ -21,7 +18,6 @@ QToolTip {
     border-radius: 6px;
 }
 
-/* ===== GroupBoxes / Frames ===== */
 QGroupBox {
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 8px;
@@ -35,7 +31,6 @@ QGroupBox::title {
     color: #9CA3AF;
 }
 
-/* ===== Generic Buttons ===== */
 QPushButton, QToolButton {
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.07);
@@ -54,7 +49,6 @@ QPushButton:disabled, QToolButton:disabled {
     border-color: rgba(255,255,255,0.05);
 }
 
-/* Primary role (explicit) */
 QPushButton[role="primary"], QToolButton[role="primary"] {
     background: #2563eb;
     border: 1px solid #2563eb;
@@ -69,9 +63,8 @@ QPushButton[role="danger"], QToolButton[role="danger"] {
     color: #fff;
 }
 
-/* ===== Toolbar ===== */
 QToolBar {
-    background: #0d0f10;
+    background: #111315;
     border-bottom: 1px solid rgba(255,255,255,0.06);
     padding: 6px;
 }
@@ -94,7 +87,6 @@ QToolBar QToolButton[role="primary"] {
     color: white;
 }
 
-/* ===== Segmented Control ===== */
 QWidget[segmented="true"] {
     background: transparent;
 }
@@ -110,12 +102,11 @@ QWidget[segmented="true"] QToolButton:hover {
     background: rgba(255,255,255,0.06);
 }
 QWidget[segmented="true"] QToolButton:checked {
-    background: #2563eb;  /* fixed: use :checked */
+    background: #2563eb;
     border-color: #2563eb;
     color: white;
 }
 
-/* ===== LineEdits / SpinBoxes ===== */
 QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox, QPlainTextEdit {
     background: #0f1113;
     border: 1px solid rgba(255,255,255,0.10);
@@ -128,14 +119,12 @@ QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus, QPlainTe
     border-color: rgba(37,99,235,0.9);
 }
 
-/* Combo popups */
 QComboBox QAbstractItemView {
     background: #121417;
     border: 1px solid rgba(255,255,255,0.10);
     selection-background-color: rgba(255,255,255,0.08);
 }
 
-/* ===== Tables / Headers ===== */
 QHeaderView::section {
     background: #0f1113;
     color: #9CA3AF;
@@ -153,7 +142,6 @@ QTableView {
 
 QTableView::item:alternate { background: #121417; }
 
-/* ===== Checkboxes / Radios ===== */
 QCheckBox, QRadioButton {
     spacing: 6px;
 }
@@ -174,13 +162,11 @@ QCheckBox::indicator:unchecked {
     border: 1px solid rgba(255,255,255,0.12);
 }
 
-/* ===== StatusBar ===== */
 QStatusBar {
     background: #111315;
     border-top: 1px solid rgba(255,255,255,0.06);
 }
 
-/* ===== Menus ===== */
 QMenu {
     background: #121417;
     border: 1px solid rgba(255,255,255,0.10);
@@ -223,7 +209,6 @@ QToolButton::menu-indicator {
     image: none;
 }
 
-/* ===== Modern Rounded Scrollbars ===== */
 QScrollBar:vertical {
     background: transparent;
     width: 10px;
@@ -258,3 +243,4 @@ QScrollBar::add-line, QScrollBar::sub-line {
 QScrollBar::add-page, QScrollBar::sub-page {
     background: transparent;
 }
+
