@@ -49,13 +49,6 @@ QPushButton:disabled, QToolButton:disabled {
     border-color: rgba(255,255,255,0.05);
 }
 
-QPushButton[role="primary"]:hover, QToolButton[role="primary"]:hover {
-    filter: brightness(1.05);
-}
-QPushButton[role="danger"]:hover, QToolButton[role="danger"]:hover {
-    filter: brightness(1.05);
-}
-
 QToolBar {
     background: #111315;
     border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -73,11 +66,6 @@ QToolBar QToolButton:hover {
 }
 QToolBar QToolButton:pressed {
     background: rgba(255,255,255,0.10);
-}
-QToolBar QToolButton[role="primary"] {
-    background: #2563eb;
-    border: 1px solid #2563eb;
-    color: white;
 }
 
 QWidget[segmented="true"] {
