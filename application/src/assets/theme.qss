@@ -151,6 +151,8 @@ QTableView {
     background: #0d0f10;
 }
 
+QTableView::item:alternate { background: #121417; }
+
 /* ===== Checkboxes / Radios ===== */
 QCheckBox, QRadioButton {
     spacing: 6px;
@@ -174,7 +176,7 @@ QCheckBox::indicator:unchecked {
 
 /* ===== StatusBar ===== */
 QStatusBar {
-    background: #0d0f10;
+    background: #111315;
     border-top: 1px solid rgba(255,255,255,0.06);
 }
 

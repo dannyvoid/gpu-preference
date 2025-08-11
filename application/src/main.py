@@ -44,6 +44,8 @@ from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
     QSizePolicy,
+    QStyle,
+    QStyleOptionViewItem,
 )
 
 REG_PATH = r"Software\Microsoft\DirectX\UserGpuPreferences"
@@ -314,6 +316,30 @@ class RunningProcessDialog(QDialog):
         return out
 
 
+class ExistsDelegate(QStyledItemDelegate):
+    def paint(self, painter, option, index):
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+
+        text = opt.text
+        opt.text = ""  # stop the default text paint (which uses QSS color)
+
+        # Draw the normal cell (background, focus, selection, etc.)
+        opt.widget.style().drawControl(QStyle.CE_ItemViewItem, opt, painter, opt.widget)
+
+        # Now draw our text with our own pen color
+        painter.save()
+        if not (opt.state & QStyle.State_Selected):
+            flag = index.data(Qt.UserRole)
+            if flag is True:
+                painter.setPen(QColor(120, 199, 143))
+            elif flag is False:
+                painter.setPen(QColor(255, 153, 160))
+        painter.drawText(opt.rect.adjusted(6, 0, -6, 0),
+                         Qt.AlignVCenter | Qt.AlignLeft, text)
+        painter.restore()
+
+
 class MainWindow(QMainWindow):
     class Columns(IntEnum):
         IDX = 0
@@ -395,14 +421,13 @@ class MainWindow(QMainWindow):
         add_btn = QToolButton(self)
         add_btn.setText("Add")
         add_btn.setMenu(add_menu)
-        add_btn.setPopupMode(QToolButton.MenuButtonPopup)
-        add_btn.setIcon(QIcon.fromTheme("list-add"))
+        add_btn.setPopupMode(QToolButton.InstantPopup)
         add_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         set_role(add_btn, "primary")
         tb.addWidget(add_btn)
 
         self.act_remove = QAction(
-            QIcon.fromTheme("edit-delete"), "Remove Selected", self, enabled=False
+            "Remove Selected", self, enabled=False
         )
         self.act_remove.triggered.connect(self._on_remove_selected)
 
@@ -422,22 +447,25 @@ class MainWindow(QMainWindow):
 
         tb.addSeparator()
 
-        self.check_btn = QToolButton(self)
-        self.check_btn.setIcon(QIcon.fromTheme("system-search"))
-        self.check_btn.setText("Check All")
-        self.check_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.check_btn.clicked.connect(
-            lambda: self._on_check_existence(selected_only=True)
+        # --- Check button: full-button menu, static label + dynamic menu ---
+        self.act_check_selected = QAction("Check Selected", self)
+        self.act_check_selected.triggered.connect(
+            lambda: self._on_check_existence(True)
         )
 
-        check_menu = QMenu(self)
-        check_menu.addAction("Check Selected", lambda: self._on_check_existence(True))
-        check_menu.addAction("Check All", lambda: self._on_check_existence(False))
-        self.check_btn.setMenu(check_menu)
-        self.check_btn.setPopupMode(QToolButton.MenuButtonPopup)
+        self.act_check_all = QAction("Check All", self)
+        self.act_check_all.triggered.connect(lambda: self._on_check_existence(False))
+
+        self.check_menu = QMenu(self)
+
+        self.check_btn = QToolButton(self)
+        self.check_btn.setText("Check Path")  # static label
+        self.check_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.check_btn.setMenu(self.check_menu)
+        self.check_btn.setPopupMode(QToolButton.InstantPopup)  # no split
         tb.addWidget(self.check_btn)
 
-        act_refresh = QAction(QIcon.fromTheme("view-refresh"), "Refresh", self)
+        act_refresh = QAction("Refresh", self)
         act_refresh.triggered.connect(self._load_entries)
         refresh_btn = QToolButton(self)
         refresh_btn.setDefaultAction(act_refresh)
@@ -476,7 +504,6 @@ class MainWindow(QMainWindow):
         opt_btn.setText("Options")
         opt_btn.setMenu(opt_menu)
         opt_btn.setPopupMode(QToolButton.InstantPopup)
-        opt_btn.setIcon(QIcon.fromTheme("applications-system"))
         set_role(opt_btn, "ghost")
         tb.addWidget(opt_btn)
 
@@ -490,7 +517,7 @@ class MainWindow(QMainWindow):
         tb.addWidget(self.quick_filter)
 
         self.table = QTableView(self)
-        self.table.setAlternatingRowColors(False)
+        self.table.setAlternatingRowColors(True)
         self.table.setSortingEnabled(True)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
@@ -498,7 +525,7 @@ class MainWindow(QMainWindow):
         self.table.verticalHeader().hide()
 
         self.model = QStandardItemModel(0, 4, self)
-        self.model.setHeaderData(self.Columns.IDX, Qt.Horizontal, "Index")
+        self.model.setHeaderData(self.Columns.IDX, Qt.Horizontal, "")
         self.model.setHeaderData(self.Columns.EXEC, Qt.Horizontal, "Executable")
         self.model.setHeaderData(self.Columns.PREF, Qt.Horizontal, "GPU Preference")
         self.model.setHeaderData(self.Columns.EXISTS, Qt.Horizontal, "Exists")
@@ -506,6 +533,9 @@ class MainWindow(QMainWindow):
         self.table.setModel(self.model)
         self.table.setItemDelegateForColumn(self.Columns.EXEC, PathDelegate(self.table))
         self.table.setItemDelegateForColumn(self.Columns.PREF, PrefDelegate(self.table))
+        self.table.setItemDelegateForColumn(
+            self.Columns.EXISTS, ExistsDelegate(self.table)
+        )
 
         hdr = self.table.horizontalHeader()
         hdr.setDefaultAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -593,20 +623,19 @@ class MainWindow(QMainWindow):
 
         item = self.model.item(row, self.Columns.EXISTS)
         item.setText(exists_text)
+        # Store boolean for the delegate; None means "unknown/blank"
+        item.setData(exists_flag, Qt.UserRole)
 
+        # Clear previous manual roles for the whole row
         for c in range(self.model.columnCount()):
             it = self.model.item(row, c)
             it.setData(None, Qt.BackgroundRole)
             it.setData(None, Qt.ForegroundRole)
 
+        # Keep the missing-path background highlight on the EXEC cell
         if exists_flag is False:
             warn_bg = QColor(44, 7, 7)
-            warn_fg = QColor(255, 153, 160)
             self.model.item(row, self.Columns.EXEC).setBackground(warn_bg)
-            item.setForeground(warn_fg)
-        elif exists_flag is True:
-            ok_fg = QColor(120, 199, 143)
-            item.setForeground(ok_fg)
 
     def _existing_set(self) -> set[str]:
         return {e.exe for e in RegistryManager.read_all()}
@@ -769,11 +798,23 @@ class MainWindow(QMainWindow):
 
     def _update_actions_state(self, *_):
         has_sel = bool(self.table.selectionModel().selectedRows())
+        sel_rows = len(self.table.selectionModel().selectedRows())  # noqa F841
         self.act_remove.setEnabled(has_sel)
-        sel_rows = len(self.table.selectionModel().selectedRows())
-        self.check_btn.setText(f"Check {sel_rows} Selected" if has_sel else "Check All")
         for b in self._seg.buttons:
             b.setEnabled(has_sel)
+
+        # Static check button label; no dynamic text.
+
+        # Dynamic menu ordering + default
+        self.check_menu.clear()
+        if has_sel:
+            self.check_menu.addAction(self.act_check_selected)
+            self.check_menu.addAction(self.act_check_all)
+            self.check_menu.setDefaultAction(self.act_check_selected)
+        else:
+            self.check_menu.addAction(self.act_check_all)
+            self.check_menu.addAction(self.act_check_selected)
+            self.check_menu.setDefaultAction(self.act_check_all)
 
         self._refresh_segmented_from_selection()
 
