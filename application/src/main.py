@@ -420,7 +420,6 @@ class MainWindow(QMainWindow):
         add_btn.setText("Add")
         add_btn.setMenu(add_menu)
         add_btn.setPopupMode(QToolButton.InstantPopup)
-        add_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         set_role(add_btn, "primary")
         tb.addWidget(add_btn)
 
@@ -429,7 +428,6 @@ class MainWindow(QMainWindow):
 
         remove_btn = QToolButton(self)
         remove_btn.setDefaultAction(self.act_remove)
-        remove_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         set_role(remove_btn, "danger")
         tb.addWidget(remove_btn)
 
@@ -455,7 +453,6 @@ class MainWindow(QMainWindow):
 
         self.check_btn = QToolButton(self)
         self.check_btn.setText("Check Path")
-        self.check_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.check_btn.setMenu(self.check_menu)
         self.check_btn.setPopupMode(QToolButton.InstantPopup)
         tb.addWidget(self.check_btn)
@@ -464,7 +461,6 @@ class MainWindow(QMainWindow):
         act_refresh.triggered.connect(self._load_entries)
         refresh_btn = QToolButton(self)
         refresh_btn.setDefaultAction(act_refresh)
-        refresh_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         set_role(refresh_btn, "ghost")
         tb.addWidget(refresh_btn)
 
